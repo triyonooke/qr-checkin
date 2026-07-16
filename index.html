@@ -2,14 +2,55 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QR Check In</title>
+<title>Tes Kamera</title>
+
+<style>
+
+body{
+    text-align:center;
+    font-family:Arial;
+}
+
+video{
+    width:90%;
+    max-width:450px;
+    border:2px solid black;
+    border-radius:10px;
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h1>Halo Triyono 😀</h1>
+<h2>TES KAMERA</h2>
 
-<p>GitHub Pages berhasil.</p>
+<video id="video" autoplay playsinline></video>
+
+<script>
+
+const video=document.getElementById("video");
+
+navigator.mediaDevices.getUserMedia({
+
+    video:{
+        facingMode:"environment"
+    }
+
+})
+.then(stream=>{
+
+    video.srcObject=stream;
+
+})
+.catch(err=>{
+
+    alert(err);
+
+});
+
+</script>
 
 </body>
 </html>
