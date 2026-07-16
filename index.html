@@ -2,20 +2,28 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tes Kamera</title>
+<title>QR Scanner</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 
 body{
-    text-align:center;
     font-family:Arial;
+    text-align:center;
+    margin:20px;
 }
 
-video{
-    width:90%;
-    max-width:450px;
-    border:2px solid black;
-    border-radius:10px;
+#reader{
+    width:320px;
+    margin:auto;
+}
+
+#hasil{
+    margin-top:20px;
+    font-size:24px;
+    font-weight:bold;
+    color:blue;
 }
 
 </style>
@@ -24,27 +32,37 @@ video{
 
 <body>
 
-<h2>TES KAMERA</h2>
+<h2>SCAN QR PESERTA</h2>
 
-<video id="video" autoplay playsinline></video>
+<div id="reader"></div>
+
+<div id="hasil">
+Silakan arahkan kamera ke QR Code
+</div>
 
 <script>
 
-const video=document.getElementById("video");
+const html5QrCode = new Html5Qrcode("reader");
 
-navigator.mediaDevices.getUserMedia({
+html5QrCode.start(
+    {
+        facingMode: "environment"
+    },
+    {
+        fps: 10,
+        qrbox: 250
+    },
+    function(decodedText){
 
-    video:{
-        facingMode:"environment"
+        document.getElementById("hasil").innerHTML =
+        "QR : " + decodedText;
+
+    },
+    function(errorMessage){
+        // abaikan error scan
     }
 
-})
-.then(stream=>{
-
-    video.srcObject=stream;
-
-})
-.catch(err=>{
+).catch(err=>{
 
     alert(err);
 
