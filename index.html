@@ -53,6 +53,7 @@ html5QrCode.start(
         qrbox: 250
     },
     function(decodedText){
+        console.log(decodedText);
 
         document.getElementById("hasil").innerHTML =
         "QR : " + decodedText;
