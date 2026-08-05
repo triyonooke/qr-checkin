@@ -2,32 +2,46 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QR Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Scanner Peserta</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+    background-color: #f4f6f9;
+  }
 
-body{
-    font-family:Arial;
-    text-align:center;
-    margin:20px;
-}
+  #reader {
+    width: 100%;
+    max-width: 360px;
+    margin: auto;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
 
-#reader{
-    width:320px;
-    margin:auto;
-}
+  #hasil {
+    margin-top: 20px;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    background: #ffffff;
+    max-width: 330px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
 
-#hasil{
-    margin-top:20px;
-    font-size:24px;
-    font-weight:bold;
-    color:blue;
-}
-
+  .found { color: #2e7d32; background-color: #e8f5e9 !important; }
+  .not-found { color: #c62828; background-color: #ffebee !important; }
+  .loading { color: #f57c00; background-color: #fff3e0 !important; }
 </style>
-
 </head>
 
 <body>
@@ -37,38 +51,70 @@ body{
 <div id="reader"></div>
 
 <div id="hasil">
-Silakan arahkan kamera ke QR Code
+  Silakan arahkan kamera ke QR Code
 </div>
 
 <script>
+  // ⚠️ GANTI DENGAN URL WEB APP APPS SCRIPT KAMU
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTH8909su-sYDTaTOMUSLUQGVccUrcBri2gsqqFkzBeSa1QFcoEbuyWGgJWcdNaCUDzg/exec";
 
-const html5QrCode = new Html5Qrcode("reader");
+  const html5QrCode = new Html5Qrcode("reader");
+  let isScanning = false; // Flag mencegah kirim berkali-kali saat scan 1 QR
 
-html5QrCode.start(
-    {
-        facingMode: "environment"
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    function(decodedText) {
+      // Jika sedang memproses request sebelumnya, abaikan scan baru
+      if (isScanning) return;
+      
+      isScanning = true;
+      
+      const hasilDiv = document.getElementById("hasil");
+      hasilDiv.className = "loading";
+      hasilDiv.innerHTML = "Memeriksa ID: " + decodedText + "...";
+
+      // Kirim data ID ke Apps Script via POST
+      const formData = new FormData();
+      formData.append("id", decodedText);
+
+      fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "FOUND") {
+          hasilDiv.className = "found";
+          hasilDiv.innerHTML = `
+            ✅ PESERTA DITEMUKAN<br>
+            <b>Nama:</b> ${data.nama}<br>
+            <b>Tiket:</b> ${data.tiket}
+          `;
+        } else if (data.status === "NOT_FOUND") {
+          hasilDiv.className = "not-found";
+          hasilDiv.innerHTML = `❌ Tiket / ID (${decodedText}) Tidak Terdaftar!`;
+        } else {
+          hasilDiv.className = "not-found";
+          hasilDiv.innerHTML = "⚠️ " + (data.pesan || "Terjadi kesalahan!");
+        }
+
+        // Buka kunci scanner setelah 3 detik agar bisa scan QR berikutnya
+        setTimeout(() => { isScanning = false; }, 3000);
+      })
+      .catch(err => {
+        console.error(err);
+        hasilDiv.className = "not-found";
+        hasilDiv.innerHTML = "Gagal terhubung ke server!";
+        setTimeout(() => { isScanning = false; }, 3000);
+      });
     },
-    {
-        fps: 10,
-        qrbox: 250
-    },
-    function(decodedText){
-        console.log(decodedText);
-
-        document.getElementById("hasil").innerHTML =
-        "QR : " + decodedText;
-
-    },
-    function(errorMessage){
-        // abaikan error scan
+    function(errorMessage) {
+      // Abaikan error pembacaan frame kamera biasa
     }
-
-).catch(err=>{
-
-    alert(err);
-
-});
-
+  ).catch(err => {
+    alert("Gagal membuka kamera: " + err);
+  });
 </script>
 
 </body>
