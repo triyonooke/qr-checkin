@@ -11,14 +11,45 @@
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    margin: 20px;
+    margin: 15px;
     background-color: #f4f6f9;
+  }
+
+  .container {
+    max-width: 360px;
+    margin: auto;
+  }
+
+  /* Styling untuk pilihan Gate */
+  .gate-box {
+    margin-bottom: 15px;
+    background: #ffffff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    text-align: left;
+  }
+
+  .gate-box label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .gate-box select {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    outline: none;
   }
 
   #reader {
     width: 100%;
-    max-width: 360px;
-    margin: auto;
     background: #fff;
     border-radius: 8px;
     overflow: hidden;
@@ -26,15 +57,12 @@
   }
 
   #hasil {
-    margin-top: 20px;
+    margin-top: 15px;
     padding: 15px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     border-radius: 8px;
     background: #ffffff;
-    max-width: 330px;
-    margin-left: auto;
-    margin-right: auto;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
@@ -46,37 +74,54 @@
 
 <body>
 
-<h2>SCAN QR PESERTA</h2>
+<div class="container">
+  <h2>SCAN QR PESERTA</h2>
 
-<div id="reader"></div>
+  <!-- 1. Pilihan Gate/Scanner untuk Petugas -->
+  <div class="gate-box">
+    <label for="selectGate">📍 Pilih Lokasi Gate / Device:</label>
+    <select id="selectGate">
+      <option value="Gate 1 - Pintu Barat">Gate 1 - Pintu Barat</option>
+      <option value="Gate 2 - Pintu Timur">Gate 2 - Pintu Timur</option>
+      <option value="Gate 3 - Pintu Utara">Gate 3 - Pintu Utara</option>
+      <option value="Gate VIP">Gate VIP</option>
+      <option value="Gate Panitia">Gate Panitia</option>
+      <!-- Kamu bisa menambah pilihan Gate 6 - 15 di sini -->
+    </select>
+  </div>
 
-<div id="hasil">
-  Silakan arahkan kamera ke QR Code
+  <div id="reader"></div>
+
+  <div id="hasil">
+    Silakan arahkan QR Code ke kamera
+  </div>
 </div>
 
 <script>
-  // ⚠️ GANTI DENGAN URL WEB APP APPS SCRIPT KAMU
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTH8909su-sYDTaTOMUSLUQGVccUrcBri2gsqqFkzBeSa1QFcoEbuyWGgJWcdNaCUDzg/exec";
+  // URL Web App Apps Script Kamu
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
 
   const html5QrCode = new Html5Qrcode("reader");
-  let isScanning = false; // Flag mencegah kirim berkali-kali saat scan 1 QR
+  let isScanning = false;
 
   html5QrCode.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     function(decodedText) {
-      // Jika sedang memproses request sebelumnya, abaikan scan baru
       if (isScanning) return;
-      
       isScanning = true;
       
       const hasilDiv = document.getElementById("hasil");
-      hasilDiv.className = "loading";
-      hasilDiv.innerHTML = "Memeriksa ID: " + decodedText + "...";
+      // 2. Ambil nilai gate yang sedang dipilih dari dropdown
+      const selectedGate = document.getElementById("selectGate").value;
 
-      // Kirim data ID ke Apps Script via POST
+      hasilDiv.className = "loading";
+      hasilDiv.innerHTML = `Memeriksa ID: ${decodedText}...<br><small>(${selectedGate})</small>`;
+
+      // 3. Kirim ID dan Nama Gate ke Apps Script
       const formData = new FormData();
       formData.append("id", decodedText);
+      formData.append("device", selectedGate); // <-- Dikirim ke Apps Script
 
       fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -89,17 +134,17 @@
           hasilDiv.innerHTML = `
             ✅ PESERTA DITEMUKAN<br>
             <b>Nama:</b> ${data.nama}<br>
-            <b>Tiket:</b> ${data.tiket}
+            <b>Tiket:</b> ${data.tiket}<br>
+            <small style="font-weight:normal; color:#555;">Scan via: ${selectedGate}</small>
           `;
         } else if (data.status === "NOT_FOUND") {
           hasilDiv.className = "not-found";
-          hasilDiv.innerHTML = `❌ Tiket / ID (${decodedText}) Tidak Terdaftar!`;
+          hasilDiv.innerHTML = `❌ ID (${decodedText}) Tidak Terdaftar!`;
         } else {
           hasilDiv.className = "not-found";
           hasilDiv.innerHTML = "⚠️ " + (data.pesan || "Terjadi kesalahan!");
         }
 
-        // Buka kunci scanner setelah 3 detik agar bisa scan QR berikutnya
         setTimeout(() => { isScanning = false; }, 3000);
       })
       .catch(err => {
@@ -109,9 +154,7 @@
         setTimeout(() => { isScanning = false; }, 3000);
       });
     },
-    function(errorMessage) {
-      // Abaikan error pembacaan frame kamera biasa
-    }
+    function(errorMessage) {}
   ).catch(err => {
     alert("Gagal membuka kamera: " + err);
   });
