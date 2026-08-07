@@ -132,10 +132,18 @@
         if (data.status === "FOUND") {
           hasilDiv.className = "found";
           hasilDiv.innerHTML = `
-            ✅ PESERTA DITEMUKAN<br>
+          ✅ PESERTA DITEMUKAN<br>
             <b>Nama:</b> ${data.nama}<br>
             <b>Tiket:</b> ${data.tiket}<br>
             <small style="font-weight:normal; color:#555;">Scan via: ${selectedGate}</small>
+          `;
+        } else if (data.status === "ALREADY_EXISTS") {
+          // ⚠️ TAMPILAN JIKA QR DUA KALI DISCAN
+          hasilDiv.className = "loading"; // Bisa pakai warna oranye/kuning
+          hasilDiv.innerHTML = `
+            ⚠️ SUDAH HADIR SEBELUMNYA!<br>
+            <b>Nama:</b> ${data.nama}<br>
+            <span style="color:#c62828;">Tiket Sudah Digunakan!</span>
           `;
         } else if (data.status === "NOT_FOUND") {
           hasilDiv.className = "not-found";
@@ -145,12 +153,6 @@
           hasilDiv.innerHTML = "⚠️ " + (data.pesan || "Terjadi kesalahan!");
         }
 
-        setTimeout(() => { isScanning = false; }, 3000);
-      })
-      .catch(err => {
-        console.error(err);
-        hasilDiv.className = "not-found";
-        hasilDiv.innerHTML = "Gagal terhubung ke server!";
         setTimeout(() => { isScanning = false; }, 3000);
       });
     },
